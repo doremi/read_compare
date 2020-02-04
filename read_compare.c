@@ -21,7 +21,7 @@ static int read_block(int fd, void *buf, const off_t off_blocks, const int retry
     return -1;
 }
 
-static void read_and_compare_block(const int devfd, const void *iso_mem, const off_t off_blocks) {
+static int read_and_compare_block(const int devfd, const void *iso_mem, const off_t off_blocks) {
     const int retry = 3;
     char devbuf[BLOCK_SIZE] = "";
     const void *target = (char*)iso_mem + (off_blocks * BLOCK_SIZE);
@@ -29,15 +29,16 @@ static void read_and_compare_block(const int devfd, const void *iso_mem, const o
     for (int i = 0; i < retry; ++i) {
         if (read_block(devfd, &devbuf, off_blocks, retry) != 0) {
             printf("Read failed!\n");
-            return;
+            return -1;
         }
         if (memcmp(&devbuf, target, BLOCK_SIZE) == 0) {
             printf("Read and Compare OK on block %ld\r", off_blocks);
-            return;
+            return 0;
         } else {
             printf("\nTry %d: Read and Compare ERROR on blocks %ld\n", i, off_blocks);
         }
     }
+    return -1;
 }
 
 void read_and_compare(const char *devname, const char *isoname) {
@@ -76,7 +77,9 @@ void read_and_compare(const char *devname, const char *isoname) {
     */
 
     for (off_t curr_blocks = 0; curr_blocks < total_blocks; ++curr_blocks) {
-        read_and_compare_block(devfd, iso_mem, curr_blocks);
+        if (read_and_compare_block(devfd, iso_mem, curr_blocks) == -1) {
+            break;
+        }
     }
 
     printf("\nOK\n");
