@@ -58,7 +58,8 @@ static int read_and_compare_block(const void *iso_mem, const off_t off_blocks, c
             return 0;
         } else {
             printf("\nTry %d: Read and Compare ERROR on blocks %ld\n", i, off_blocks);
-            if (!posix_fadvise(g_devfd, (off_blocks * BLOCK_SIZE), BLOCK_SIZE, POSIX_FADV_DONTNEED)) {
+            printf("fsync: %d\n", fsync(g_devfd));
+            if (posix_fadvise(g_devfd, (off_blocks * BLOCK_SIZE), BLOCK_SIZE, POSIX_FADV_DONTNEED)) {
                 perror("fadvise");
                 printf("Change to dev close and reopen\n");
                 printf("Old fd: %d, ", g_devfd);
