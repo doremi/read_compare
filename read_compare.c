@@ -153,6 +153,12 @@ int main(int argc, char **argv) {
     printf("input1: %s\n", argv[1]);
     printf("input2: %s\n", argv[2]);
     printf("output: %s\n", argv[3]);
+
+    const char* const output_file = argv[3];
+    if (access(output_file, F_OK) == 0) {
+        printf("Output file: %s exist! skip!\n", output_file);
+        return 0;
+    }
     dev_filename = argv[1];
     read_and_compare(argv[1], argv[2], argv[3]);
     return 0;
