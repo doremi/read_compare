@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <errno.h>
 
 #define BLOCK_SIZE (2048)
 
@@ -59,7 +60,7 @@ static int read_and_compare_block(const void *iso_mem, const off_t off_blocks, c
         } else {
             printf("\nTry %d: Read and Compare ERROR on blocks %ld\n", i, off_blocks);
             printf("fsync: %d\n", fsync(g_devfd));
-            if (posix_fadvise(g_devfd, (off_blocks * BLOCK_SIZE), BLOCK_SIZE, POSIX_FADV_DONTNEED)) {
+            if (posix_fadvise(g_devfd, (off_blocks * BLOCK_SIZE), BLOCK_SIZE, POSIX_FADV_DONTNEED) != 0) {
                 perror("fadvise");
                 printf("Change to dev close and reopen\n");
                 printf("Old fd: %d, ", g_devfd);
@@ -80,6 +81,26 @@ void read_and_compare(const char *devname, const char *isoname, const char *outp
         perror(devname);
         return;
     }
+    int fadv = posix_fadvise(devfd, 0, size, POSIX_FADV_DONTNEED);
+    switch (fadv) {
+        case EBADF:
+            printf("EBADF\n");
+            break;
+        case EINVAL:
+            printf("EINVAL\n");
+            break;
+        case ESPIPE:
+            printf("ESPIPE\n");
+            break;
+        default:
+            printf("fadv: %d\n", fadv);
+            if (fadv != 0) {
+                close(devfd);
+                return;
+            }
+            break;
+    }
+
     g_devfd = devfd;
 
     int isofd = open(isoname, O_RDONLY);
