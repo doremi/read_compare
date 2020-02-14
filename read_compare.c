@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #define BLOCK_SIZE (2048)
+#define ISO_SIZE (7851737088)
 
 static char *dev_filename = NULL;
 static int g_devfd = -1;
@@ -44,7 +45,7 @@ static int read_block(int fd, void *buf, const off_t off_blocks, const int retry
 }
 
 static int read_and_compare_block(const void *iso_mem, const off_t off_blocks, const int isofd) {
-    const off_t size = 7851737088;
+    const off_t size = ISO_SIZE;
     const int retry = 3;
     char devbuf[BLOCK_SIZE] = "";
     const void *target = (char*)iso_mem + (off_blocks * BLOCK_SIZE);
@@ -74,7 +75,7 @@ static int read_and_compare_block(const void *iso_mem, const off_t off_blocks, c
 }
 
 void read_and_compare(const char *devname, const char *isoname, const char *output) {
-    const off_t size = 7851737088;
+    const off_t size = ISO_SIZE;
     const off_t total_blocks = size / BLOCK_SIZE;
 
     int devfd = open(devname, O_RDONLY);
