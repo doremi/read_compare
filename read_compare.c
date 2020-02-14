@@ -44,6 +44,7 @@ static int read_block(int fd, void *buf, const off_t off_blocks, const int retry
 }
 
 static int read_and_compare_block(const void *iso_mem, const off_t off_blocks, const int isofd) {
+    const off_t size = 7851737088;
     const int retry = 3;
     char devbuf[BLOCK_SIZE] = "";
     const void *target = (char*)iso_mem + (off_blocks * BLOCK_SIZE);
@@ -60,7 +61,7 @@ static int read_and_compare_block(const void *iso_mem, const off_t off_blocks, c
         } else {
             printf("\nTry %d: Read and Compare ERROR on blocks %ld\n", i, off_blocks);
             printf("fsync: %d\n", fsync(g_devfd));
-            if (posix_fadvise(g_devfd, (off_blocks * BLOCK_SIZE), BLOCK_SIZE, POSIX_FADV_DONTNEED) != 0) {
+            if (posix_fadvise(g_devfd, 0, size, POSIX_FADV_DONTNEED) != 0) {
                 perror("fadvise");
                 printf("Change to dev close and reopen\n");
                 printf("Old fd: %d, ", g_devfd);
@@ -82,6 +83,7 @@ void read_and_compare(const char *devname, const char *isoname, const char *outp
         return;
     }
     int fadv = posix_fadvise(devfd, 0, size, POSIX_FADV_DONTNEED);
+    printf("Initial fadv: ");
     switch (fadv) {
         case EBADF:
             printf("EBADF\n");
@@ -93,7 +95,7 @@ void read_and_compare(const char *devname, const char *isoname, const char *outp
             printf("ESPIPE\n");
             break;
         default:
-            printf("fadv: %d\n", fadv);
+            printf("%d\n", fadv);
             if (fadv != 0) {
                 close(devfd);
                 return;
