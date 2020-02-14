@@ -61,7 +61,9 @@ static int read_and_compare_block(const void *iso_mem, const off_t off_blocks, c
             return 0;
         } else {
             printf("\nTry %d: Read and Compare ERROR on blocks %ld\n", i, off_blocks);
-            printf("fsync: %d\n", fsync(g_devfd));
+            if (fsync(g_devfd)) {
+                perror("fsync");
+            }
             if (posix_fadvise(g_devfd, 0, size, POSIX_FADV_DONTNEED) != 0) {
                 perror("fadvise");
                 printf("Change to dev close and reopen\n");
@@ -84,24 +86,24 @@ void read_and_compare(const char *devname, const char *isoname, const char *outp
         return;
     }
     int fadv = posix_fadvise(devfd, 0, size, POSIX_FADV_DONTNEED);
-    printf("Initial fadv: ");
-    switch (fadv) {
-        case EBADF:
-            printf("EBADF\n");
-            break;
-        case EINVAL:
-            printf("EINVAL\n");
-            break;
-        case ESPIPE:
-            printf("ESPIPE\n");
-            break;
-        default:
-            printf("%d\n", fadv);
-            if (fadv != 0) {
-                close(devfd);
-                return;
-            }
-            break;
+    if (fadv) {
+        printf("Initial fadv: ");
+        switch (fadv) {
+            case EBADF:
+                printf("EBADF\n");
+                break;
+            case EINVAL:
+                printf("EINVAL\n");
+                break;
+            case ESPIPE:
+                printf("ESPIPE\n");
+                break;
+            default:
+                printf("%d\n", fadv);
+                break;
+        }
+        close(devfd);
+        return;
     }
 
     g_devfd = devfd;
